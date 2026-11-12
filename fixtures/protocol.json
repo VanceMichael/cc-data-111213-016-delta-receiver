@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "weak": "adler32",
+  "strong": "sha256",
+  "operations": [
+    "copy",
+    "literal"
+  ],
+  "blockSizes": [
+    8,
+    16,
+    64
+  ]
+}
