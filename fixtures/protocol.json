@@ -2,6 +2,7 @@
   "version": 1,
   "weak": "adler32",
   "strong": "sha256",
+  "strongPrefixBytes": 16,
   "operations": [
     "copy",
     "literal"
@@ -9,6 +10,9 @@
   "blockSizes": [
     8,
     16,
-    64
+    64,
+    256,
+    1024,
+    4096
   ]
 }
