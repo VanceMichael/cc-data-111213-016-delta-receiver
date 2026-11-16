@@ -11,8 +11,9 @@
     "start": "node src/cli.js",
     "acceptance": "node src/cli.js demo",
     "demo": "node src/cli.js demo",
+    "drill": "node src/cli.js drill",
     "fixtures": "node scripts/create-fixtures.js",
-    "check": "node --check src/cli.js && node --check src/domain.js"
+    "check": "node --check src/cli.js && node --check src/domain.js && node --check src/archive.js && node --check src/delta.js && node --check src/drill.js"
   },
   "dependencies": {}
 }

@@ -1,9 +1,17 @@
-import { mkdir, open, readFile, rename, readdir, rm } from 'node:fs/promises';
+import { createReadStream } from 'node:fs';
+import { copyFile, mkdir, open, readFile, rename, readdir, rm } from 'node:fs/promises';
 import { resolve, join } from 'node:path';
 import { createHash, randomUUID } from 'node:crypto';
 
 export function digest(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
+}
+
+export async function hashFile(path) {
+  const hash = createHash('sha256');
+  let size = 0;
+  for await (const chunk of createReadStream(path)) { hash.update(chunk); size += chunk.length; }
+  return { sha256: hash.digest('hex'), size };
 }
 
 export class Archive {
@@ -25,6 +33,23 @@ export class Archive {
     const sha256 = digest(bytes);
     await this.writeAtomic(join(this.directory, 'objects', sha256), bytes);
     const receipt = { id: randomUUID(), sha256, size: bytes.length,
+      observedAt: new Date().toISOString(), metadata };
+    await this.writeAtomic(join(this.directory, 'receipts', `${receipt.id}.json`),
+      JSON.stringify(receipt, null, 2));
+    return receipt;
+  }
+  async acceptFile(path, metadata = {}, { expectedSha256 } = {}) {
+    await this.initialize();
+    const { sha256, size } = await hashFile(path);
+    if (expectedSha256 && sha256 !== expectedSha256) throw new Error('对象完整性校验失败');
+    const temporary = join(this.directory, 'objects', `${sha256}.${randomUUID()}.tmp`);
+    await copyFile(path, temporary);
+    const handle = await open(temporary, 'r');
+    try { await handle.sync(); }
+    finally { await handle.close(); }
+    try { await rename(temporary, join(this.directory, 'objects', sha256)); }
+    finally { await rm(temporary, { force: true }); }
+    const receipt = { id: randomUUID(), sha256, size,
       observedAt: new Date().toISOString(), metadata };
     await this.writeAtomic(join(this.directory, 'receipts', `${receipt.id}.json`),
       JSON.stringify(receipt, null, 2));
